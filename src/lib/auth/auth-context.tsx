@@ -24,11 +24,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
 
   const signInWithGoogle = async () => {
-    await authClient.signIn.social({ provider: "google", callbackURL: "/balance-tracker" });
+    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "/balance-tracker" });
+    if (error) throw new Error(error.message ?? "Sign in failed");
   };
 
   const signOut = async () => {
-    await authClient.signOut();
+    const { error } = await authClient.signOut();
+    if (error) throw new Error(error.message ?? "Sign out failed");
   };
 
   const user = useMemo<User | null>(() => {
@@ -42,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!session, isLoading: isPending, user, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!session && !isPending, isLoading: isPending, user, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

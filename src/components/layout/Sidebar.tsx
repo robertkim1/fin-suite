@@ -12,6 +12,14 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
 
+  async function handleSignOut() {
+    try {
+      await signOut();
+    } catch (e) {
+      console.error("Sign out failed:", e);
+    }
+  }
+
   return (
     <aside className="flex h-screen w-56 flex-col border-r bg-sidebar px-3 py-4 shrink-0">
       <div className="mb-6 px-2">
@@ -47,7 +55,7 @@ export function Sidebar() {
         variant="ghost"
         size="sm"
         className="mt-2 justify-start gap-2 text-muted-foreground"
-        onClick={signOut}
+        onClick={handleSignOut}
       >
         <LogOut className="size-4" />
         Sign out

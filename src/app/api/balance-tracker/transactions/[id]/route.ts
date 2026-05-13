@@ -1,14 +1,8 @@
-import { auth } from "@/lib/auth/auth";
+import { getUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema/balance-tracker";
 import { eq, and } from "drizzle-orm";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-async function getUser() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  return session?.user ?? null;
-}
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getUser();

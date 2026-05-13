@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import { useState, useEffect } from "react";
+import { geoAlbersUsa, geoPath } from "d3-geo";
+import { feature } from "topojson-client";
+import type { Topology, GeometryCollection } from "topojson-specification";
 import cities from "@/data/cities-col.json";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const WIDTH = 975;
+const HEIGHT = 610;
+
+const projection = geoAlbersUsa().scale(1300).translate([487.5, 305]);
+const pathGenerator = geoPath(projection);
 
 type City = (typeof cities)[number];
 
@@ -44,7 +51,17 @@ interface Props {
 }
 
 export default function USMap({ salary, homeCity }: Props) {
+  const [statePaths, setStatePaths] = useState<string[]>([]);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+
+  useEffect(() => {
+    fetch(GEO_URL)
+      .then((r) => r.json())
+      .then((topology: Topology) => {
+        const states = feature(topology, topology.objects.states as GeometryCollection);
+        setStatePaths(states.features.map((f) => pathGenerator(f) ?? ""));
+      });
+  }, []);
 
   function handleEnter(city: City, e: React.MouseEvent) {
     if (!homeCity || city.id === homeCity.id || salary <= 0) return;
@@ -59,45 +76,47 @@ export default function USMap({ salary, homeCity }: Props) {
 
   return (
     <div className="relative" onMouseMove={handleMove} onMouseLeave={() => setTooltip(null)}>
-      <ComposableMap projection="geoAlbersUsa" className="w-full">
-        <Geographies geography={GEO_URL}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                fill="#e2e8f0"
-                stroke="#cbd5e1"
-                strokeWidth={0.5}
-                style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
-              />
-            ))
-          }
-        </Geographies>
-
-        {cities.map((city) => {
-          const isHome = homeCity?.id === city.id;
-          const active = homeCity && salary > 0 && !isHome;
-          return (
-            <Marker key={city.id} coordinates={[city.lng, city.lat]}>
-              <circle
-                r={isHome ? 7 : 5}
-                fill={isHome ? "#0f172a" : active ? "#3b82f6" : "#94a3b8"}
-                stroke="white"
-                strokeWidth={1.5}
-                className="cursor-pointer transition-all"
-                onMouseEnter={(e) => handleEnter(city, e as unknown as React.MouseEvent)}
-                onMouseLeave={() => setTooltip(null)}
-              />
-              {isHome && (
-                <text textAnchor="middle" y={-10} style={{ fontSize: 9, fill: "#0f172a", fontWeight: 600 }}>
-                  {city.city}
-                </text>
-              )}
-            </Marker>
-          );
-        })}
-      </ComposableMap>
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full">
+        <g>
+          {statePaths.map((d, i) => (
+            <path key={i} d={d} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth={0.5} />
+          ))}
+        </g>
+        <g>
+          {cities.map((city) => {
+            const projected = projection([city.lng, city.lat]);
+            if (!projected) return null;
+            const [cx, cy] = projected;
+            const isHome = homeCity?.id === city.id;
+            const active = homeCity && salary > 0 && !isHome;
+            return (
+              <g key={city.id}>
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={isHome ? 7 : 5}
+                  fill={isHome ? "#0f172a" : active ? "#3b82f6" : "#94a3b8"}
+                  stroke="white"
+                  strokeWidth={1.5}
+                  className="cursor-pointer transition-all"
+                  onMouseEnter={(e) => handleEnter(city, e)}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+                {isHome && (
+                  <text
+                    x={cx}
+                    y={cy - 10}
+                    textAnchor="middle"
+                    style={{ fontSize: 9, fill: "#0f172a", fontWeight: 600 }}
+                  >
+                    {city.city}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+      </svg>
 
       {tooltip && (
         <div
