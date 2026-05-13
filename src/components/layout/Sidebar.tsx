@@ -10,7 +10,7 @@ import { LogOut } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   async function handleSignOut() {
     try {
@@ -51,15 +51,17 @@ export function Sidebar() {
         })}
       </nav>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-2 justify-start gap-2 text-muted-foreground"
-        onClick={handleSignOut}
-      >
-        <LogOut className="size-4" />
-        Sign out
-      </Button>
+      {isAuthenticated && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 justify-start gap-2 text-muted-foreground"
+          onClick={handleSignOut}
+        >
+          <LogOut className="size-4" />
+          Sign out
+        </Button>
+      )}
     </aside>
   );
 }

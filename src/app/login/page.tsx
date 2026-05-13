@@ -19,8 +19,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-semibold">Personal Finance Suite</h1>
-      <p className="text-muted-foreground text-sm">Sign in to get started</p>
+      <h1 className="text-2xl font-semibold">Fin Suite</h1>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button onClick={handleSignIn} disabled={isLoading}>
         Sign in with Google
